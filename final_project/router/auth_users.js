@@ -38,7 +38,7 @@ regd_users.post("/login", (req,res) => {
     if (authenticatedUser(username,password)) {
       let accessToken = jwt.sign({
         data: password
-      }, 'access', { expiresIn: 60 * 60 });
+      }, 'access', { expiresIn: 60*60 });
   
       req.session.authorization = {
         accessToken,username
@@ -53,7 +53,7 @@ regd_users.post("/login", (req,res) => {
 regd_users.put("/auth/review/:isbn", (req, res) => {
     const username = req.session.authorization.username;
     const isbn = req.params.isbn;
-    const review = req.query.review;
+    const review = req.body.review;
 
     // Vérifier si l'utilisateur est connecté
     if (!username) {
@@ -61,9 +61,9 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
     }
 
     // Vérifier si la revue est fournie
-    //if (!review) {
-     //   return res.status(400).json({ message: "Review is required" });
-    //}
+    if (!review) {
+        return res.status(400).json({ message: "Review is required" });
+    }
 
     // Trouver le livre correspondant à l'ISBN
     const book = books[isbn];
@@ -75,16 +75,10 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
     if (!book.reviews) {
         book.reviews = {};
     }
-    // Vérifier si l'utilisateur a déjà critiqué ce livre
-    if (book.reviews[username]) {
-        // Si l'utilisateur a déjà critiqué ce livre, mettez à jour sa critique
-        book.reviews[username] = review;
-        return res.status(200).json({ message: "Review modified successfully" });
-    } else {
-        // Si l'utilisateur n'a pas encore critiqué ce livre, ajoutez une nouvelle critique
-        book.reviews[username] = review;
-        return res.status(200).json({ message: "Review added successfully" });
-    }
+    book.reviews[username] = review;
+
+    return res.status(200).json({ message: "Review added or modified successfully" });
+
 });
 
 regd_users.delete("/auth/review/:isbn", (req, res) => {
@@ -102,12 +96,17 @@ regd_users.delete("/auth/review/:isbn", (req, res) => {
         return res.status(404).json({ message: "Book not found" });
     }
 
-    // Vérifier si l'utilisateur a déjà écrit une critique pour ce livre
-    if (!book.reviews || !book.reviews[username]) {
-        return res.status(404).json({ message: "Review not found for this user and ISBN" });
+    // Vérifier si le livre a des critiques
+    if (!book.reviews) {
+        return res.status(404).json({ message: "No reviews available for this book" });
     }
 
-    // Supprimer la critique de l'utilisateur
+    // Vérifier si l'utilisateur a une critique pour ce livre
+    if (!book.reviews[username]) {
+        return res.status(404).json({ message: "No review found for this user and ISBN" });
+    }
+
+    // Supprimer la critique de l'utilisateur pour ce livre
     delete book.reviews[username];
 
     return res.status(200).json({ message: "Review deleted successfully" });
