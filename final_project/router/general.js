@@ -28,37 +28,35 @@ public_users.post("/register", (req,res) => {
     return res.status(200).json({ message: "User successfully registered." });
 });
 
-// Get the book list available in the shop using Promises
-public_users.get('/books',function (req, res) {
-
-    const get_books = new Promise((resolve, reject) => {
-        resolve(res.send(JSON.stringify({books}, null, 4)));
-      });
-
-      get_books.then(() => console.log("Promise for Task 10 resolved"));
-      console.log("test: this message is displayed before the first console log above")
-  });
-
-// Get book details based on ISBN using async-await with axios
-public_users.get('/isbn/:isbn', async function (req, res) {
+// Get the book list available in the shop using async callback function
+public_users.get(['/','/books'], async function (req, res) {
     try {
-        const isbn = req.params.isbn;
-        const response = await axios.get('https://omardij01-5000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/books');
-        const books = response.data.books;
-        
-        // Recherche du livre basé sur l'ISBN
-        const bookByIsbn = books[isbn];
-        
-        if (bookByIsbn) {
-            res.json(bookByIsbn);
-            console.log("Promise for Task 11 resolved");
-        } else {
-            res.status(404).json({ message: "Book not found" });
-        }
+        res.json(books);
+        console.log("Retrieved list of books");
     } catch (error) {
-        console.error('Error fetching book details:', error);
-        res.status(500).json({ message: "Error fetching book details" });
+        console.error('Error fetching books:', error);
+        res.status(500).json({ message: 'Error fetching books' });
     }
+});
+
+// Get book details based on ISBN using Promises with axios
+public_users.get('/isbn/:isbn', function (req, res) {
+    const isbn = req.params.isbn;
+    axios.get('https://omardij01-5000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/books')
+        .then(response => {
+            const books = response.data.books;
+            const bookByIsbn = books[isbn];
+            if (bookByIsbn) {
+                res.json(bookByIsbn);
+                console.log("Retrieved book details by ISBN");
+            } else {
+                res.status(404).json({ message: "Book not found" });
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching book details:', error);
+            res.status(500).json({ message: "Error fetching book details" });
+        });
 });
   
 // Get book details based on author using async-await with axios
@@ -67,13 +65,10 @@ public_users.get('/author/:author', async function (req, res) {
         const author = req.params.author;
         const response = await axios.get('https://omardij01-5000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/books');
         const books = response.data.books;
-        
-        // Filter books based on the author
         const booksByAuthor = Object.values(books).filter(book => book.author === author);
-        
         if (booksByAuthor.length > 0) {
             res.status(200).json(booksByAuthor);
-            console.log("Promise for Task 12 resolved");
+            console.log("Retrieved books by author");
         } else {
             res.status(404).json({ message: 'No books found for author' });
         }
@@ -89,13 +84,10 @@ public_users.get('/title/:title', async function (req, res) {
         const title = req.params.title;
         const response = await axios.get('https://omardij01-5000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/books');
         const books = response.data.books;
-        
-        // Filter books based on the title
         const booksByTitle = Object.values(books).filter(book => book.title === title);
-        
         if (booksByTitle.length > 0) {
             res.status(200).json(booksByTitle);
-            console.log("Promise for Task 13 resolved");
+            console.log("Retrieved books by title");
         } else {
             res.status(404).json({ message: 'No books found for this title' });
         }
